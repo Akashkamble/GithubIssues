@@ -1,14 +1,18 @@
 package dev.akash.githubissues.domain.model
 
+import android.os.Parcelable
 import dev.akash.githubissues.data.model.issuelist.RemoteGitHubIssueResponseItem
+import kotlinx.android.parcel.Parcelize
 
+@Parcelize
 data class IssueInfo(
     val id: Long,
     val title: String,
     val description: String,
     val user: User,
-    val commentsUrl: String
-)
+    val comments: Int,
+    val issueNumber : Int
+) : Parcelable
 
 fun IssueInfo.getShortDescription(): String {
     return if (this.description.length <= 200) {
@@ -17,11 +21,6 @@ fun IssueInfo.getShortDescription(): String {
         "${this.description.substring(IntRange(0, 199))}..."
     }
 }
-
-data class User(
-    val userName: String,
-    val avatarUrl: String
-)
 
 fun RemoteGitHubIssueResponseItem.toIssueInfo(): IssueInfo {
     return IssueInfo(
@@ -32,6 +31,7 @@ fun RemoteGitHubIssueResponseItem.toIssueInfo(): IssueInfo {
             userName = this.user.login,
             avatarUrl = this.user.avatarUrl
         ),
-        commentsUrl = this.commentsUrl
+        comments = this.comments,
+        issueNumber = this.number
     )
 }

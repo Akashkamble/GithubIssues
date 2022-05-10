@@ -1,7 +1,9 @@
 package dev.akash.githubissues.data
 
 import dev.akash.githubissues.data.remote.GitHubIssueApiService
+import dev.akash.githubissues.domain.model.CommentInfo
 import dev.akash.githubissues.domain.model.IssueInfo
+import dev.akash.githubissues.domain.model.toCommentInfo
 import dev.akash.githubissues.domain.model.toIssueInfo
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,29 @@ class IssueRepositoryImpl @Inject constructor(
                 if (response.isSuccessful && response.body() != null) {
                     return@withContext Result.Success(data = response.body()!!.map { remoteIssue ->
                         remoteIssue.toIssueInfo()
+                    })
+                } else {
+                    return@withContext Result.Error(DataFetchingException("No data found"))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                if (e.localizedMessage!!.contains("Unable to resolve host")) {
+                    return@withContext Result.Error(DataFetchingException("No internet connection"))
+                } else {
+                    return@withContext Result.Error(DataFetchingException("Something went wrong"))
+                }
+            }
+        }
+        return result
+    }
+
+    override suspend fun getCommentsForIssue(issueNumber: Int): Result<List<CommentInfo>> {
+        val result = withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getCommentsFor(issueNumber)
+                if (response.isSuccessful && response.body() != null) {
+                    return@withContext Result.Success(data = response.body()!!.map { remoteComment ->
+                        remoteComment.toCommentInfo()
                     })
                 } else {
                     return@withContext Result.Error(DataFetchingException("No data found"))

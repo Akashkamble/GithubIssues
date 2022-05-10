@@ -1,9 +1,12 @@
-package dev.akash.githubissues.ui.issuelist
+package dev.akash.githubissues.ui.commentlist
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -14,49 +17,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import dev.akash.githubissues.domain.model.IssueInfo
-import dev.akash.githubissues.ui.destinations.IssueDetailsScreenDestination
-import dev.akash.githubissues.ui.issuelist.components.IssueList
+import dev.akash.githubissues.ui.commentlist.components.CommentItem
 
 /**
- * This is a first screen of an app.
- * Where you can see the list of issues filed under square's okhttp library.
+ * This is the screen where we will display the all the comments
+ * related to the issue.
  */
-@Destination(
-    start = true
-)
+@Destination
 @Composable
-fun GitHubIssueListScreen(
-    modifier: Modifier = Modifier,
-    navigator: DestinationsNavigator,
-    viewModel: IssueListViewModel = hiltViewModel()
+fun CommentListScreen(
+    issueNumber: Int,
+    viewModel: CommentListViewModel = hiltViewModel()
 ) {
     val viewState = viewModel.viewState.collectAsState()
-
     LaunchedEffect(key1 = Unit) {
-        viewModel.getIssueList()
+        viewModel.getCommentsForIssue(issueNumber)
     }
-
-    GitHubIssueListContent(viewState = viewState.value, modifier) { issue ->
-        navigator.navigate(IssueDetailsScreenDestination(issueInfo = issue))
-    }
+    CommentListContent(viewState = viewState.value)
 }
 
 @Composable
-fun GitHubIssueListContent(
-    viewState: IssueListUiState,
-    modifier: Modifier,
-    onIssueClick: (issue: IssueInfo) -> Unit
-) {
+fun CommentListContent(viewState: CommentListUiStatedata, modifier: Modifier = Modifier) {
     Surface(color = Color.White) {
         Box(
             modifier = modifier.fillMaxSize(),
         ) {
             when {
-                viewState.isLoading -> {
+                viewState.isLoadingComments -> {
                     CircularProgressIndicator(
                         modifier = Modifier
                             .wrapContentSize()
@@ -73,14 +63,18 @@ fun GitHubIssueListContent(
                             .testTag("issue-list-loading-error")
                     )
                 }
-                viewState.issueInfoList.isNotEmpty() -> {
-                    IssueList(
-                        list = viewState.issueInfoList,
-                        onIssueClick = onIssueClick
-                    )
+                viewState.commentList.isNotEmpty() -> {
+                    LazyColumn(
+                        modifier = modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(all = 16.dp)
+                    ) {
+                        items(viewState.commentList) { comment ->
+                            CommentItem(commentInfo = comment, modifier = modifier)
+                        }
+                    }
                 }
-
             }
         }
     }
 }
+
